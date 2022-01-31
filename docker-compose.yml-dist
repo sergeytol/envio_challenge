@@ -1,0 +1,39 @@
+version: "3.9"
+
+networks:
+  envio:
+
+volumes:
+  db-data:
+
+services:
+  envio-db:
+    image: timescale/timescaledb:latest-pg14
+    environment:
+      - POSTGRES_PASSWORD=envio
+      - POSTGRES_USER=envio
+      - POSTGRES_DB=envio
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - envio
+    restart: always
+
+  envio-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - envio-db
+    restart: always
+    command: python envio_challenge/manage.py runserver 0.0.0.0:8000
+    environment:
+      - ENVIO_SETTINGS_ENV=${ENVIO_SETTINGS_ENV:-dev}
+    volumes:
+      - ./:/app
+    ports:
+      - "8888:8000"
+    networks:
+      - envio
